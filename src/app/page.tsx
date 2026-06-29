@@ -1,64 +1,125 @@
-import Image from "next/image";
+import { getDashboardData } from "@/lib/tools/kpis";
+import KpiCard from "@/components/KpiCard";
+import OrderVolumeChart from "@/components/charts/OrderVolumeChart";
+import DeliveryPerformanceChart from "@/components/charts/DeliveryPerformanceChart";
+import CarrierDelayChart from "@/components/charts/CarrierDelayChart";
 
-export default function Home() {
+// Server component — reads data directly from the in-memory DB; no API call needed.
+export const dynamic = "force-dynamic";
+
+export default function DashboardPage() {
+  const data = getDashboardData();
+  const { kpis } = data;
+  // node:sqlite returns null-prototype objects; JSON round-trip produces plain objects
+  // required for RSC → Client Component prop serialization.
+  const charts = JSON.parse(JSON.stringify(data.charts)) as typeof data.charts;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
+    <div className="min-h-screen bg-gray-50">
+      {/* ------------------------------------------------------------------ */}
+      {/* Header                                                               */}
+      {/* ------------------------------------------------------------------ */}
+      <header className="border-b border-gray-200 bg-white px-6 py-4 shadow-sm">
+        <div className="mx-auto flex max-w-7xl items-center justify-between">
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">Spaceship Logistics</h1>
+            <p className="text-xs text-gray-500">AI-Powered Analytics Dashboard</p>
+          </div>
+          <nav className="flex gap-6 text-sm font-medium">
+            <span className="text-blue-600">Dashboard</span>
             <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              href="/chat"
+              className="text-gray-500 transition-colors hover:text-gray-900"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              Ask AI
+            </a>
+          </nav>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+      </header>
+
+      <main className="mx-auto max-w-7xl space-y-8 px-6 py-8">
+        {/* ---------------------------------------------------------------- */}
+        {/* KPI cards                                                         */}
+        {/* ---------------------------------------------------------------- */}
+        <section>
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500">
+            Key Metrics — Full Dataset (Jan – Dec 2025, 400 orders)
+          </h2>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            <KpiCard
+              title="Total Orders"
+              value={kpis.totalOrders.toLocaleString()}
+              sub="all statuses"
             />
-            Deploy Now
+            <KpiCard
+              title="Delivered"
+              value={kpis.deliveredOrders.toLocaleString()}
+              variant="good"
+            />
+            <KpiCard
+              title="Delayed"
+              value={kpis.delayedOrders.toLocaleString()}
+              variant="warn"
+              sub="status = 'delayed'"
+            />
+            <KpiCard
+              title="On-Time Rate"
+              value={`${kpis.onTimeRatePct}%`}
+              variant="good"
+              sub="delivered ÷ (delivered + delayed)"
+            />
+            <KpiCard
+              title="Avg Delivery"
+              value={`${kpis.avgDeliveryDays} days`}
+              sub="orders with a delivery date"
+            />
+          </div>
+        </section>
+
+        {/* ---------------------------------------------------------------- */}
+        {/* Charts                                                            */}
+        {/* ---------------------------------------------------------------- */}
+        <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h3 className="mb-1 text-sm font-semibold text-gray-700">
+              Order Volume by Month
+            </h3>
+            <p className="mb-4 text-xs text-gray-400">
+              Total orders placed per calendar month
+            </p>
+            <OrderVolumeChart data={charts.orderVolumeByMonth} />
+          </div>
+
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h3 className="mb-1 text-sm font-semibold text-gray-700">
+              Delivery Performance by Month
+            </h3>
+            <p className="mb-4 text-xs text-gray-400">
+              Concluded orders (delivered + delayed) — excludes in-transit, canceled, exception
+            </p>
+            <DeliveryPerformanceChart data={charts.deliveryPerformanceByMonth} />
+          </div>
+
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm lg:col-span-2">
+            <h3 className="mb-1 text-sm font-semibold text-gray-700">
+              Delay Rate by Carrier
+            </h3>
+            <p className="mb-4 text-xs text-gray-400">
+              % of orders with status = &#39;delayed&#39; per carrier · hover for order count
+            </p>
+            <CarrierDelayChart data={charts.delayRateByCarrier} />
+          </div>
+        </section>
+
+        {/* ---------------------------------------------------------------- */}
+        {/* Footer note                                                       */}
+        {/* ---------------------------------------------------------------- */}
+        <footer className="border-t border-gray-200 pt-4 text-xs text-gray-400">
+          Data: mock_logistics_data.csv · 400 orders · Jan–Dec 2025 ·{" "}
+          <a href="/chat" className="text-blue-400 hover:underline">
+            Ask the AI a question →
           </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+        </footer>
       </main>
     </div>
   );
