@@ -1,12 +1,28 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { chat } from "@/lib/ai/router";
 
-// Natural-language orchestration endpoint.
-// Implemented in step 5 (see _plan/05_ai_orchestration.md): runs the Claude
-// tool-use loop, executes the chosen deterministic tool, and returns
-// { answer, chartSpec, data, explainability }.
-export async function POST() {
-  return NextResponse.json(
-    { error: "Not implemented yet (step 5 — AI orchestration)." },
-    { status: 501 },
-  );
+export const dynamic = "force-dynamic";
+
+export async function POST(req: NextRequest) {
+  let question: string;
+  try {
+    const body = (await req.json()) as { question?: unknown };
+    question = typeof body.question === "string" ? body.question.trim() : "";
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+  }
+
+  if (!question) {
+    return NextResponse.json({ error: "question is required." }, { status: 400 });
+  }
+
+  try {
+    const result = await chat(question);
+    return NextResponse.json(result);
+  } catch (err) {
+    console.error("[/api/chat]", err);
+    const message = err instanceof Error ? err.message : "Internal server error.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
