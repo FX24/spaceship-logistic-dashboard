@@ -1,8 +1,20 @@
-# Step 2 — Data Layer (schema, seed, definitions)
+# Step 2 — Data Layer (schema, seed, definitions) — ✅ DONE
 
 **Maps to grading:** **Data correctness (20%)** — the single biggest category. Get this right.
-**Depends on:** Step 1, and **the actual dataset file** (not yet in repo).
+**Depends on:** Step 1, and the dataset file (`data/mock_logistics_data.csv`, 400 rows — present).
 **Est. effort:** 1–1.5 hr.
+
+> **Resolved against the real dataset (differs from the original assumptions below):**
+> - The CSV has **no `promised_date`**, but carries an explicit `status`. So "delayed" is read from
+>   `status`, NOT computed as `delivered_at > promised_at`.
+> - **Delayed = `status='delayed'` only**; on-time rate = delivered / (delivered+delayed); avg
+>   delivery time over rows with a non-null `delivery_date`. (See `src/lib/db/definitions.ts`.)
+> - Driver = **`node:sqlite`** (built-in, Node ≥ 24), in-memory, built from a committed JSON artifact
+>   — not a persistent `.db` file. `npm run seed` does CSV → Zod-validate → `src/lib/db/dataset.json`.
+> - CSV has quoted commas (`"London, UK"`) → a real parser (`data/csv.ts`), not naive split.
+> - Verified numbers: 400 orders, delivered 304, delayed 55, on-time 84.7%, avg 3.83 days.
+>
+> Original plan text retained below for context.
 
 ## Goal
 

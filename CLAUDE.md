@@ -48,8 +48,11 @@ The brief allows any stack. We commit to one cohesive, single-deployable choice:
 - **Framework:** Next.js (App Router) + **TypeScript** — frontend and API routes in one Vercel deploy.
 - **UI:** Tailwind CSS + shadcn/ui.
 - **Charts:** Recharts.
-- **Data:** Postgres (Neon / Vercel Postgres). SQLite is an acceptable simpler alternative if the
-  dataset is small and we want zero external services. Load the provided dataset once via a seed script.
+- **Data:** **SQLite via the built-in `node:sqlite`** (zero external deps, no native build). The
+  seed script (`npm run seed`) parses the provided CSV → validates with Zod → writes a committed
+  `src/lib/db/dataset.json`; at runtime that artifact is loaded into an in-memory, read-only SQLite
+  DB (cached singleton in `src/lib/db/connection.ts`). Requires Node ≥ 24 (pinned in `engines`); the
+  driver is isolated to one file so it can be swapped for WASM `sql.js` if a host lacks Node 24.
 - **AI orchestration:** Anthropic Claude with **tool use (function calling)**. Default model
   `claude-sonnet-4-6` for routing (fast + capable + cost-effective); escalate to `claude-opus-4-8`
   only if routing quality demands it. Verify model IDs and API details against the `claude-api` skill
@@ -73,7 +76,7 @@ Support questions like:
 - "Which carrier has the highest delay rate?"
 - "How many orders were delivered late last month?"
 
-Each answer returns **a direct answer, a chart, or both**, plus explainability (§7).
+Each answer returns **a direct answer, a chart, or both**, plus explainability.
 
 ### 5.3 Dynamic chart generation
 The system auto-selects an appropriate chart type and renders it dynamically for the supported
@@ -112,11 +115,20 @@ clearest signal that the AI is not hallucinating numbers.
 
 ## 8. Data handling
 
-- Load the **provided dataset** (place under `data/`, seed into the DB once).
-- **Read-only** — no mutations from the app.
-- Get **aggregation and filtering correct**; this is 20% of the grade. Watch timezones, date
-  boundaries ("last month"), null/late-delivery definitions, and on-time vs delayed logic.
-- Define and document the rule for "delayed" (e.g. `delivered_at > promised_at`) in one place.
+- Dataset: `data/mock_logistics_data.csv` (400 orders across 2025). Columns: client_id, order_id,
+  order_date, delivery_date, carrier, origin/destination_city, status, sku, product_category,
+  quantity, unit_price_usd, order_value_usd, is_promo, promo_discount_pct, region, warehouse.
+- **Read-only** — the CSV is the source of truth; the app never mutates it.
+- Get **aggregation and filtering correct** (20% of the grade). Date boundaries are UTC calendar
+  dates; "last month" = previous full calendar month.
+- **Business rules live in one place** (`src/lib/db/definitions.ts`). There is **no promised/SLA
+  date** in the data, but every order has an explicit `status`, so outcomes are read from it:
+  - **Delayed** = `status = 'delayed'` only (`exception` is *not* counted as delayed).
+  - **On-time delivery rate** = delivered / (delivered + delayed). `in_transit`/`canceled`/`exception`
+    are excluded from the denominator (not concluded deliveries).
+  - **Average delivery time** = `AVG(delivery_days)` over rows with a non-null `delivery_date`.
+  - **Total orders** = `COUNT(*)` (includes canceled). 30 orders have no delivery date.
+  - Reference numbers (sanity checks): delivered 304, delayed 55, on-time 84.7%, avg 3.83 days.
 
 ## 9. Proposed project structure
 
@@ -135,11 +147,14 @@ src/
 
 ## 10. Commands
 
-_No code exists yet. Fill in actual commands as they are created._ Expected shape:
-- `npm run dev` — local dev server
-- `npm run seed` — load the provided dataset into the DB
-- `npm run build` / `npm start` — production build/serve
-- `npm test` — tests (bonus, but worth it for forecasting/aggregation correctness)
+- `npm run dev` — local dev server (Next.js, Turbopack).
+- `npm run seed` — parse the CSV and regenerate `src/lib/db/dataset.json`. Re-run after editing the
+  dataset or the schema/derivation logic.
+- `npm run build` / `npm start` — production build/serve.
+- `npm run lint` — ESLint.
+- `npm test` — tests (bonus; planned for forecasting/aggregation correctness). _(not yet added)_
+
+Requires **Node ≥ 24** (`node:sqlite`).
 
 ## 11. Conventions & guardrails
 

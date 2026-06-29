@@ -4,6 +4,11 @@
 **Depends on:** Step 2 (historical series), Step 3 (query patterns).
 **Est. effort:** 1.5–2 hr.
 
+> **Resolved:** 355 distinct SKUs across 400 orders (~1 order/SKU) → per-SKU forecasting is too
+> sparse. **Forecast by `product_category` (8 values) and overall**, on monthly buckets. Document
+> SKU-level as unsupported. So `forecast_demand` target = `{ category?: string }` (omit ⇒ overall),
+> not a SKU. Update the contract below accordingly when implementing.
+
 ## Goal
 
 A deterministic `forecast_demand` function: build a historical demand series from the dataset,
