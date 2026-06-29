@@ -14,19 +14,34 @@ type Props = {
   data: { carrier: string; on_time_rate: number; total: number }[];
 };
 
-/** Maps an on-time rate (0–100) to a colour: green at 100%, red at 0%. */
+/**
+ * Piecewise colour mapping:
+ *   ≥ 80 % → green  (hue 95–120)
+ *   25–80 % → amber / yellow  (hue 35–95)
+ *   < 25 % → red  (hue 0–35)
+ */
 function rateToColor(rate: number): string {
-  const hue = Math.round((rate / 100) * 120); // 0 = red, 120 = green
-  return `hsl(${hue}, 65%, 42%)`;
+  let hue: number;
+  if (rate >= 80) {
+    hue = 95 + ((rate - 80) / 20) * 25; // 95 → 120
+  } else if (rate >= 25) {
+    hue = 35 + ((rate - 25) / 55) * 60; // 35 → 95
+  } else {
+    hue = (rate / 25) * 35; // 0 → 35
+  }
+  return `hsl(${Math.round(hue)}, 68%, 40%)`;
 }
 
 export default function CarrierDelayChart({ data }: Props) {
+  // 33px per carrier gives enough room for 11px labels with no auto-hiding
+  const height = Math.max(240, data.length * 33);
+
   return (
-    <ResponsiveContainer width="100%" height={200}>
+    <ResponsiveContainer width="100%" height={height}>
       <BarChart
         data={data}
         layout="vertical"
-        margin={{ top: 5, right: 60, bottom: 5, left: 65 }}
+        margin={{ top: 5, right: 55, bottom: 5, left: 5 }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
         <XAxis
@@ -39,7 +54,7 @@ export default function CarrierDelayChart({ data }: Props) {
           type="category"
           dataKey="carrier"
           tick={{ fontSize: 11 }}
-          width={60}
+          width={82}
         />
         <Tooltip
           formatter={(value) => [
