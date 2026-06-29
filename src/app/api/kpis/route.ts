@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
+import { getDashboardData } from "@/lib/tools/kpis";
 
-// Dashboard KPI + chart-data endpoint.
-// Implemented in step 3 (see _plan/03_analytics_backend.md): returns the five
-// required KPIs and the dashboard chart datasets from deterministic SQL.
+export const dynamic = "force-dynamic";
+
 export async function GET() {
-  return NextResponse.json(
-    { error: "Not implemented yet (step 3 — query_analytics / KPIs)." },
-    { status: 501 },
-  );
+  try {
+    const data = getDashboardData();
+    return NextResponse.json(data);
+  } catch (err) {
+    console.error("[/api/kpis]", err);
+    return NextResponse.json(
+      { error: "Failed to compute dashboard data." },
+      { status: 500 },
+    );
+  }
 }
