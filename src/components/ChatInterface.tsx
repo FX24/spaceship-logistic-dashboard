@@ -169,9 +169,7 @@ function MessageItem({ message }: { message: Message }) {
       {/* Answer card */}
       <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm space-y-4">
         {/* Answer text */}
-        <p className="text-sm leading-relaxed text-gray-800 whitespace-pre-wrap">
-          {response.answer}
-        </p>
+        <MarkdownText text={response.answer} />
 
         {/* Analytics chart */}
         {analyticsResult && analyticsResult.rows.length > 0 && (
@@ -248,6 +246,82 @@ function MessageItem({ message }: { message: Message }) {
           />
         )}
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Markdown renderer — handles bold, italic, inline code, bullets, numbered lists
+// ---------------------------------------------------------------------------
+
+function InlineText({ text }: { text: string }) {
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.startsWith("**") && part.endsWith("**"))
+          return <strong key={i}>{part.slice(2, -2)}</strong>;
+        if (part.startsWith("*") && part.endsWith("*"))
+          return <em key={i}>{part.slice(1, -1)}</em>;
+        if (part.startsWith("`") && part.endsWith("`"))
+          return (
+            <code key={i} className="rounded bg-gray-100 px-1 font-mono text-xs">
+              {part.slice(1, -1)}
+            </code>
+          );
+        return <span key={i}>{part}</span>;
+      })}
+    </>
+  );
+}
+
+function MarkdownText({ text }: { text: string }) {
+  const blocks = text.split(/\n{2,}/);
+
+  return (
+    <div className="space-y-2 text-sm leading-relaxed text-gray-800">
+      {blocks.map((block, i) => {
+        const lines = block.split("\n").filter(Boolean);
+        if (lines.length === 0) return null;
+
+        // Bullet list
+        if (lines.every((l) => /^[-*] /.test(l))) {
+          return (
+            <ul key={i} className="list-disc space-y-0.5 pl-5">
+              {lines.map((l, j) => (
+                <li key={j}>
+                  <InlineText text={l.replace(/^[-*] /, "")} />
+                </li>
+              ))}
+            </ul>
+          );
+        }
+
+        // Numbered list
+        if (lines.every((l) => /^\d+\.\s/.test(l))) {
+          return (
+            <ol key={i} className="list-decimal space-y-0.5 pl-5">
+              {lines.map((l, j) => (
+                <li key={j}>
+                  <InlineText text={l.replace(/^\d+\.\s+/, "")} />
+                </li>
+              ))}
+            </ol>
+          );
+        }
+
+        // Regular paragraph (single newlines become line breaks)
+        return (
+          <p key={i}>
+            {lines.map((l, j) => (
+              <span key={j}>
+                {j > 0 && <br />}
+                <InlineText text={l} />
+              </span>
+            ))}
+          </p>
+        );
+      })}
     </div>
   );
 }

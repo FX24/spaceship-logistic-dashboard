@@ -189,14 +189,17 @@ function ForecastExplainability({ result }: { result: ForecastResult }) {
         <p className="text-gray-600 leading-relaxed">{inventory.rationale}</p>
       </section>
 
-      {/* Historical SQL */}
+      {/* Structured interpretation */}
       <section>
         <h4 className="font-semibold text-gray-600 mb-2 uppercase tracking-wide">
-          Historical data SQL
+          Structured interpretation
         </h4>
-        <pre className="bg-white rounded border border-gray-200 p-3 overflow-x-auto text-gray-700 leading-relaxed">
-          {queryPlan.historicalSql}
-        </pre>
+        <div className="flex flex-wrap gap-2">
+          <Chip label="target" value={queryPlan.target} />
+          <Chip label="method" value={queryPlan.methodUsed} />
+          <Chip label="horizon" value={`${queryPlan.horizon} months`} />
+          <Chip label="historical data" value={`${queryPlan.historicalPeriods} months`} />
+        </div>
       </section>
 
       {/* Forecast values */}
@@ -228,5 +231,14 @@ function ForecastExplainability({ result }: { result: ForecastResult }) {
         </div>
       </section>
     </>
+  );
+}
+
+function Chip({ label, value }: { label: string; value: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs">
+      <span className="text-gray-400">{label}</span>
+      <span className="font-mono font-medium text-gray-700">{value}</span>
+    </span>
   );
 }
