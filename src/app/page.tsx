@@ -102,12 +102,12 @@ export default function DashboardPage() {
 
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm lg:col-span-2">
             <h3 className="mb-1 text-sm font-semibold text-gray-700">
-              Delay Rate by Carrier
+              On-Time Rate by Carrier
             </h3>
             <p className="mb-4 text-xs text-gray-400">
-              % of orders with status = &#39;delayed&#39; per carrier · hover for order count
+              delivered ÷ (delivered + delayed) per carrier · best to worst · green = 100%, red = 0%
             </p>
-            <CarrierDelayChart data={charts.delayRateByCarrier} />
+            <CarrierDelayChart data={charts.onTimeRateByCarrier} />
           </div>
         </section>
 

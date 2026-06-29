@@ -115,6 +115,6 @@ export type DashboardData = {
   charts: {
     orderVolumeByMonth: { period: string; value: number }[];
     deliveryPerformanceByMonth: { period: string; delivered: number; delayed: number }[];
-    delayRateByCarrier: { carrier: string; delay_rate: number; total: number }[];
+    onTimeRateByCarrier: { carrier: string; on_time_rate: number; total: number }[];
   };
 };

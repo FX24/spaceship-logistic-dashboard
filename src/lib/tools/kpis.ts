@@ -69,19 +69,20 @@ function computeCharts() {
      GROUP BY period ORDER BY period`,
   );
 
-  // 3. Delay rate by carrier (bar chart, descending)
-  const delayRateByCarrier = all<{
+  // 3. On-time rate by carrier — best (highest) first.
+  // Denominator = concluded deliveries only (delivered + delayed), matching KPI rule.
+  const onTimeRateByCarrier = all<{
     carrier: string;
-    delay_rate: number;
+    on_time_rate: number;
     total: number;
   }>(
     `SELECT carrier,
             COUNT(*) AS total,
-            ROUND(100.0 * SUM(is_delayed) / COUNT(*), 1) AS delay_rate
-     FROM orders GROUP BY carrier ORDER BY delay_rate DESC`,
+            COALESCE(ROUND(100.0 * SUM(is_delivered) / NULLIF(SUM(is_delivered) + SUM(is_delayed), 0), 1), 0) AS on_time_rate
+     FROM orders GROUP BY carrier ORDER BY on_time_rate DESC`,
   );
 
-  return { orderVolumeByMonth, deliveryPerformanceByMonth, delayRateByCarrier };
+  return { orderVolumeByMonth, deliveryPerformanceByMonth, onTimeRateByCarrier };
 }
 
 /** Returns all data needed to render the dashboard in one call. */
