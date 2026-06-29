@@ -16,20 +16,20 @@ type Props = {
 
 /**
  * Piecewise colour mapping:
- *   ≥ 80 % → green  (hue 95–120)
- *   25–80 % → amber / yellow  (hue 35–95)
- *   < 25 % → red  (hue 0–35)
+ *   ≥ 90 % → green        (hue 100–120)
+ *   50–90 % → amber/yellow (hue 38–100)
+ *   < 50 % → red           (hue 0–38)
  */
 function rateToColor(rate: number): string {
   let hue: number;
-  if (rate >= 80) {
-    hue = 95 + ((rate - 80) / 20) * 25; // 95 → 120
-  } else if (rate >= 25) {
-    hue = 35 + ((rate - 25) / 55) * 60; // 35 → 95
+  if (rate >= 90) {
+    hue = 100 + ((rate - 90) / 10) * 20; // 100 → 120
+  } else if (rate >= 50) {
+    hue = 38 + ((rate - 50) / 40) * 62;  // 38 → 100
   } else {
-    hue = (rate / 25) * 35; // 0 → 35
+    hue = (rate / 50) * 38;               // 0 → 38
   }
-  return `hsl(${Math.round(hue)}, 68%, 40%)`;
+  return `hsl(${Math.round(hue)}, 72%, 40%)`;
 }
 
 export default function CarrierDelayChart({ data }: Props) {
