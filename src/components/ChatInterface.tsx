@@ -51,6 +51,11 @@ export default function ChatInterface() {
         body: JSON.stringify({ question: q }),
       });
       response = (await res.json()) as ApiResponse;
+      // On a server error the route returns { error } with no answer — make sure
+      // the error field is populated so the UI shows it instead of rendering blank.
+      if (!res.ok && !response.answer && !response.error) {
+        response.error = `Request failed (HTTP ${res.status}).`;
+      }
     } catch {
       response = {
         answer: "A network error occurred. Please check your connection and try again.",
@@ -346,7 +351,8 @@ function InlineText({ text }: { text: string }) {
   );
 }
 
-function MarkdownText({ text }: { text: string }) {
+function MarkdownText({ text }: { text?: string }) {
+  if (!text) return null;
   const blocks = tokenizeMd(text);
 
   return (
