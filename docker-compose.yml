@@ -1,0 +1,13 @@
+# Convenience wrapper around the Dockerfile.
+#   docker compose up --build
+# The API key is read from your shell env or a .env file next to this compose
+# file (ANTHROPIC_API_KEY=sk-ant-...). The dashboard works without it; only the
+# /chat natural-language feature needs it.
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+    restart: unless-stopped

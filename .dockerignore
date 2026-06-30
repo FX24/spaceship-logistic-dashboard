@@ -1,0 +1,31 @@
+# Build artifacts & deps (reinstalled/rebuilt inside the image)
+node_modules
+.next
+out
+dist
+*.tsbuildinfo
+
+# Secrets — never copy env files into the image
+.env
+.env.local
+.env*.local
+
+# VCS & tooling
+.git
+.gitignore
+.vercel
+
+# Docs / non-runtime assets
+README.md
+screenshots
+docs
+_plan
+*.docx
+
+# Tests (not needed in the runtime image)
+test
+
+# Docker files themselves
+Dockerfile
+.dockerignore
+docker-compose.yml

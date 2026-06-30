@@ -59,6 +59,40 @@ Project → Settings → Environment Variables.
 | `npm run seed` | Re-parse the CSV → regenerate `src/lib/db/dataset.json`. |
 | `npm run build` / `npm start` | Production build / serve. |
 | `npm run lint` | ESLint. |
+| `npm test` | Run the test suite (Node's built-in runner via `tsx`). |
+
+### Testing
+Tests use **Node's built-in test runner** (`node:test`) executed through `tsx` — no extra test
+framework dependency. Coverage focuses on the parts where correctness matters most:
+
+- `test/forecast.test.ts` — moving average, OLS linear regression, method auto-selection, and the
+  inventory-recommendation formula.
+- `test/queryBuilder.test.ts` — time-range resolution (`last_month`, etc.), parameterized SQL
+  generation, allow-list enforcement, and chart inference.
+- `test/definitions.test.ts` — UTC date math and the business-rule derived fields.
+- `test/kpis.test.ts` — **end-to-end** against the committed dataset: asserts the KPI reference
+  numbers (400 / 304 / 55 / 84.7% / 3.83 days) by loading `dataset.json` into the in-memory SQLite DB.
+
+```bash
+npm test
+```
+
+### Docker
+A multi-stage `Dockerfile` builds the Next.js **standalone** output into a slim, non-root Node 24
+image (Node 24 is required for the built-in `node:sqlite`). The dataset is bundled at build time, so
+the container is self-contained.
+
+```bash
+# Build and run (dashboard works with no key; /chat needs the key)
+docker build -t logistics-dashboard .
+docker run -p 3000:3000 -e ANTHROPIC_API_KEY=sk-ant-... logistics-dashboard
+
+# Or with Docker Compose (reads ANTHROPIC_API_KEY from your shell or a .env file)
+docker compose up --build
+```
+
+Then open http://localhost:3000. The API key is passed **at runtime only** — it is never copied into
+the image (`.env*` is excluded via `.dockerignore`).
 
 ---
 
@@ -205,7 +239,7 @@ Reference sanity checks: delivered 304, delayed 55, on-time 84.7%, avg 3.83 days
 
 ## 7. Future improvements
 - Query history and result caching.
-- Automated tests for aggregation and forecasting correctness.
+- Broader test coverage (e.g. the AI router with a mocked Anthropic client, component tests).
 - Seasonality-aware forecasting (e.g. Holt-Winters).
 - Broader query coverage (e.g. revenue time series, SKU-level filters).
 - Clarification prompts for ambiguous questions.
@@ -250,4 +284,8 @@ src/
     db/                        # connection.ts, queryBuilder.ts, definitions.ts (rules), dataset.json
     forecast/                  # methods.ts — moving average / linear regression + inventory math
     schemas/                   # analytics.ts, forecast.ts, order.ts (Zod schemas for tool I/O)
+test/                          # node:test suites (forecast, queryBuilder, definitions, kpis)
+Dockerfile                     # multi-stage standalone build (Node 24 Alpine, non-root)
+docker-compose.yml             # convenience wrapper (docker compose up --build)
+.dockerignore                  # keeps build context / secrets out of the image
 ```
