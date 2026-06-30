@@ -223,14 +223,31 @@ Reference sanity checks: delivered 304, delayed 55, on-time 84.7%, avg 3.83 days
 
 ## 9. Project structure
 ```
-data/                  # provided CSV + seed script (read-only source)
+data/
+  mock_logistics_data.csv      # provided dataset (read-only source of truth)
+  csv.ts                       # tiny CSV parser (no dependency)
+  seed.ts                      # CSV → validate (Zod) → src/lib/db/dataset.json
 src/
-  app/                 # Next.js routes (dashboard UI + /api endpoints)
-    api/chat/          # NL orchestration entrypoint
-  lib/ai/              # tool definitions, system prompt, two-round router
-  lib/tools/           # query_analytics, forecast_demand (deterministic)
-  lib/db/              # connection, query builder, business-rule definitions
-  lib/forecast/        # moving average / linear regression + inventory math
-  lib/schemas/         # Zod schemas for tool I/O
-  components/          # dashboard, charts, explainability, chat UI
+  app/                         # Next.js App Router
+    page.tsx                   # dashboard (descriptive) — server component
+    loading.tsx                # dashboard loading state
+    layout.tsx                 # root layout + global styles
+    globals.css                # Tailwind v4 entry
+    chat/page.tsx              # natural-language interface (diagnostic + predictive)
+    api/
+      chat/route.ts            # NL orchestration endpoint → src/lib/ai/router.ts
+      kpis/route.ts            # dashboard KPI/chart data endpoint
+  components/
+    KpiCard.tsx                # KPI tile
+    charts/                    # dashboard charts (OrderVolume, DeliveryPerformance, CarrierDelay)
+    ChatInterface.tsx          # chat UI + markdown answer renderer
+    DynamicChart.tsx           # auto-selected line/bar/pie for chat answers
+    ForecastChart.tsx          # historical + forecast line chart
+    Explainability.tsx         # "how this was computed" panel
+  lib/
+    ai/                        # router.ts (two-round loop), tools.ts, systemPrompt.ts
+    tools/                     # queryAnalytics.ts, forecastDemand.ts, kpis.ts (deterministic)
+    db/                        # connection.ts, queryBuilder.ts, definitions.ts (rules), dataset.json
+    forecast/                  # methods.ts — moving average / linear regression + inventory math
+    schemas/                   # analytics.ts, forecast.ts, order.ts (Zod schemas for tool I/O)
 ```
