@@ -13,6 +13,8 @@ A logistics analytics dashboard with three levels of intelligence over one unifi
 > The model interprets a question and chooses a tool with structured arguments; **all numbers come
 > from deterministic computation over the dataset**, never from the model.
 
+![Dashboard — KPIs and charts](screenshots/dashboard.png)
+
 ---
 
 ## 1. Quick start (local)
@@ -119,6 +121,10 @@ Browser renders: answer (markdown) + chart + "how this was computed" panel
 
 ## 3. AI approach
 
+A natural-language question returns a direct answer, an auto-selected chart, and an explainability panel:
+
+![Chat — natural-language query with auto-generated chart](screenshots/chat.png)
+
 ### How questions are interpreted
 The orchestration (`src/lib/ai/router.ts`) is a **two-round Claude tool-use loop**:
 
@@ -146,6 +152,8 @@ The response always surfaces: the **filters/time range used**, the **metric and 
 **query plan** (validated args + exact SQL + bound params), and the **underlying data table** — so a
 reviewer can confirm every figure was computed, not guessed.
 
+![Explainability — query interpretation, SQL, and underlying data](screenshots/explainability.png)
+
 ### Forecasting
 `forecast_demand` aggregates monthly quantity from the dataset and applies a **basic** method:
 - **Moving average** (last 3 months) for stable series.
@@ -156,6 +164,8 @@ It returns the historical + forecast series (for a combined chart), an **invento
 (`recommended = ⌈avg × lead_time + safety_stock⌉`, where `safety_stock = z₉₅ × σ`, 1-month lead time,
 95% service level), and a plain-language methodology explanation. Targets: `"overall"` or any
 `product_category`.
+
+![Forecast — historical + forecast series with inventory recommendation](screenshots/forecast.png)
 
 ---
 
