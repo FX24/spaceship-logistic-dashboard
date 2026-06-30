@@ -39,5 +39,8 @@ yarn-error.log*
 # local Claude Code settings
 /.claude
 
-# personal notes (not part of the deliverable)
+# personal notes & assignment artifacts (kept locally, not part of the deliverable)
 /docs
+/_plan
+/CLAUDE.md
+/Coding_assignment.docx
