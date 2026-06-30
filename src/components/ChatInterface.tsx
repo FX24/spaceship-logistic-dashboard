@@ -251,7 +251,7 @@ function MessageItem({ message }: { message: Message }) {
 }
 
 // ---------------------------------------------------------------------------
-// Markdown renderer — handles bold, italic, inline code, bullets, numbered lists
+// Markdown renderer — bold, italic, code, headings, tables, bullet/numbered lists
 // ---------------------------------------------------------------------------
 
 function InlineText({ text }: { text: string }) {
@@ -275,14 +275,82 @@ function InlineText({ text }: { text: string }) {
   );
 }
 
+/** Parse a markdown table block into header + rows (skips separator line). */
+function parseTable(lines: string[]): { header: string[]; rows: string[][] } | null {
+  const dataLines = lines.filter((l) => !/^\s*\|[\s\-:|]+\|\s*$/.test(l));
+  if (dataLines.length < 2) return null;
+  const parse = (l: string) =>
+    l.split("|").slice(1, -1).map((c) => c.trim());
+  const [header, ...rows] = dataLines.map(parse);
+  return { header, rows };
+}
+
 function MarkdownText({ text }: { text: string }) {
-  const blocks = text.split(/\n{2,}/);
+  // Ensure headings always open a new block even without a preceding blank line
+  const normalized = text.replace(/([^\n])\n(#{1,3} )/g, "$1\n\n$2");
+  const blocks = normalized.split(/\n{2,}/);
 
   return (
-    <div className="space-y-2 text-sm leading-relaxed text-gray-800">
+    <div className="space-y-3 text-sm leading-relaxed text-gray-800">
       {blocks.map((block, i) => {
         const lines = block.split("\n").filter(Boolean);
         if (lines.length === 0) return null;
+
+        // Heading (# / ## / ###)
+        const headingMatch = lines[0].match(/^(#{1,3})\s+(.+)/);
+        if (headingMatch && lines.length === 1) {
+          const level = headingMatch[1].length;
+          const cn =
+            level === 1
+              ? "font-bold text-gray-800"
+              : level === 2
+              ? "font-semibold text-gray-700"
+              : "text-xs font-semibold uppercase tracking-wide text-gray-500 pt-1";
+          return (
+            <p key={i} className={cn}>
+              <InlineText text={headingMatch[2]} />
+            </p>
+          );
+        }
+
+        // Markdown table (every line starts with |)
+        if (lines.every((l) => l.trim().startsWith("|"))) {
+          const table = parseTable(lines);
+          if (table) {
+            return (
+              <div key={i} className="overflow-x-auto rounded border border-gray-200">
+                <table className="w-full border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      {table.header.map((col, j) => (
+                        <th
+                          key={j}
+                          className="border-b border-gray-200 px-3 py-2 text-left font-semibold text-gray-600"
+                        >
+                          <InlineText text={col} />
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {table.rows.map((row, ri) => (
+                      <tr key={ri} className={ri % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                        {row.map((cell, ci) => (
+                          <td
+                            key={ci}
+                            className="border-b border-gray-100 px-3 py-1.5 text-gray-700"
+                          >
+                            <InlineText text={cell} />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          }
+        }
 
         // Bullet list
         if (lines.every((l) => /^[-*] /.test(l))) {
